@@ -30,7 +30,7 @@
 <div class="container">
   <section>
     <h2>🏆 Leaderboard (live)</h2>
-    <div class="mini">Automatisch gesorteerd op punten.</div>
+    <div class="mini">Automatisch gesorteerd op punten (tie-break: Win%).</div>
     <table id="leaderboard">
       <thead>
         <tr>
@@ -59,7 +59,7 @@
       </thead>
       <tbody></tbody>
     </table>
-    <div class="mini">* Teams worden opnieuw getoond wanneer de admin “Genereer Teams” gebruikt.</div>
+    <div class="mini">* Teams veranderen wanneer de admin “Genereer Teams” gebruikt.</div>
   </section>
 </div>
 
@@ -67,15 +67,15 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
   import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-  // === ZELFDE CONFIG ALS IN ADMIN ===
-  const firebaseConfig = {
-  apiKey: "AIzaSyDsm0TVrNC4AAED9mJ2Qd164IsAIUC5EPs",
-  authDomain: "sunday-league-1c672.firebaseapp.com",
-  projectId: "sunday-league-1c672",
-  storageBucket: "sunday-league-1c672.firebasestorage.app",
-  messagingSenderId: "44787770094",
-  appId: "1:44787770094:web:f8e94ad091a49cda8d49ff",
-  measurementId: "G-L8K2HKXFMR"
+  // === ZELFDE CONFIG ALS IN ADMIN PLAKKEN ===
+const firebaseConfig = {
+    apiKey: "AIzaSyDsm0TVrNC4AAED9mJ2Qd164IsAIUC5EPs",
+    authDomain: "sunday-league-1c672.firebaseapp.com",
+    projectId: "sunday-league-1c672",
+    storageBucket: "sunday-league-1c672.firebasestorage.app",
+    messagingSenderId: "44787770094",
+    appId: "1:44787770094:web:f8e94ad091a49cda8d49ff",
+    measurementId: "G-L8K2HKXFMR"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -84,58 +84,4 @@
 
   let players = [];
 
-  onValue(ref(db, DB_PATH), (snap)=>{
-    const data = snap.val();
-    players = data?.players || [];
-    drawLeaderboard();
-    drawTeams(); // teams worden live opgebouwd vanuit 'actieve' spelers
-  });
-
-  function drawLeaderboard(){
-    const tb = document.querySelector('#leaderboard tbody');
-    tb.innerHTML = '';
-    const list = [...players].sort((a,b)=>{
-      if(b.points !== a.points) return b.points - a.points;
-      const awp = a.played? a.wins/a.played : 0;
-      const bwp = b.played? b.wins/b.played : 0;
-      if(bwp !== awp) return bwp - awp;
-      return (b.wins - a.wins);
-    });
-
-    list.forEach((p,i)=>{
-      const rank = i+1;
-      const medal = rank===1?'🥇 ':rank===2?'🥈 ':rank===3?'🥉 ':'';
-      const winPct = p.played>0 ? ((p.wins/p.played)*100).toFixed(1)+'%' : '0%';
-      tb.insertAdjacentHTML('beforeend', `
-        <tr>
-          <td>${medal}${rank}</td>
-          <td>${p.name}</td>
-          <td>${p.played}</td>
-          <td>${p.wins}</td>
-          <td>${p.losses}</td>
-          <td>${winPct}</td>
-          <td>${p.points}</td>
-        </tr>
-      `);
-    });
-  }
-
-  function drawTeams(){
-    const acts = players.filter(p=>p.active);
-    const tb = document.querySelector('#teams tbody');
-    tb.innerHTML = '';
-    if(acts.length<2) return;
-    acts.sort((a,b)=> b.points - a.points);
-    const high = [...acts];
-    const low  = high.splice(Math.ceil(acts.length/2));
-    while(high.length && low.length){
-      const p1 = high.shift(), p2 = low.pop();
-      tb.insertAdjacentHTML('beforeend', `<tr>
-        <td class="team1">${p1.name}</td>
-        <td class="team2">${p2.name}</td>
-      </tr>`);
-    }
-  }
-</script>
-</body>
-</html>
+  on
