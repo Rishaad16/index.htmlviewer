@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Padel Dashboard – Viewer (Live)</title>
+<style>
+  body{font-family:'Segoe UI',sans-serif;margin:0;
+    background:url('https://upload.wikimedia.org/wikipedia/commons/0/0b/Padel_court_blue.jpg') no-repeat center center fixed;
+    background-size:cover;color:#222}
+  body::before{content:"";position:fixed;inset:0;background:rgba(255,255,255,.75);z-index:-1}
+  header{text-align:center;padding:18px;font-size:1.6em;font-weight:700;
+    background:linear-gradient(90deg,#00b4d8,#48cae4);color:#fff}
+  .container{display:flex;flex-wrap:wrap;gap:20px;padding:20px}
+  section{background:#fff;padding:16px;border-radius:12px;flex:1;min-width:320px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08)}
+  h2{margin:0 0 8px;color:#0077b6}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:center}
+  th{background:#00b4d8;color:#fff;font-weight:600}
+  .team1{background:#007bff;color:#fff;border-radius:6px;padding:6px 10px;display:inline-block}
+  .team2{background:#ff7b00;color:#fff;border-radius:6px;padding:6px 10px;display:inline-block}
+  .mini{font-size:.9em;color:#475569}
+  @media(max-width:900px){.container{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>🎾 Padel Dashboard – Viewer (Live)</header>
+
+<div class="container">
+  <section>
+    <h2>🏆 Leaderboard (live)</h2>
+    <div class="mini">Automatisch gesorteerd op punten.</div>
+    <table id="leaderboard">
+      <thead>
+        <tr>
+          <th>Ranking</th>
+          <th>Naam</th>
+          <th>Gespeeld</th>
+          <th>Winst</th>
+          <th>Verlies</th>
+          <th>Win%</th>
+          <th>Punten</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>🔄 Teams (live)</h2>
+    <div class="mini">Actieve spelers (sterk ↔ zwak).</div>
+    <table id="teams">
+      <thead>
+        <tr>
+          <th class="team1">Team 1</th>
+          <th class="team2">Team 2</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="mini">* Teams worden opnieuw getoond wanneer de admin “Genereer Teams” gebruikt.</div>
+  </section>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+  // === ZELFDE CONFIG ALS IN ADMIN ===
+  const firebaseConfig = {
+  apiKey: "AIzaSyDsm0TVrNC4AAED9mJ2Qd164IsAIUC5EPs",
+  authDomain: "sunday-league-1c672.firebaseapp.com",
+  projectId: "sunday-league-1c672",
+  storageBucket: "sunday-league-1c672.firebasestorage.app",
+  messagingSenderId: "44787770094",
+  appId: "1:44787770094:web:f8e94ad091a49cda8d49ff",
+  measurementId: "G-L8K2HKXFMR"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  const DB_PATH = "tournamentData";
+
+  let players = [];
+
+  onValue(ref(db, DB_PATH), (snap)=>{
+    const data = snap.val();
+    players = data?.players || [];
+    drawLeaderboard();
+    drawTeams(); // teams worden live opgebouwd vanuit 'actieve' spelers
+  });
+
+  function drawLeaderboard(){
+    const tb = document.querySelector('#leaderboard tbody');
+    tb.innerHTML = '';
+    const list = [...players].sort((a,b)=>{
+      if(b.points !== a.points) return b.points - a.points;
+      const awp = a.played? a.wins/a.played : 0;
+      const bwp = b.played? b.wins/b.played : 0;
+      if(bwp !== awp) return bwp - awp;
+      return (b.wins - a.wins);
+    });
+
+    list.forEach((p,i)=>{
+      const rank = i+1;
+      const medal = rank===1?'🥇 ':rank===2?'🥈 ':rank===3?'🥉 ':'';
+      const winPct = p.played>0 ? ((p.wins/p.played)*100).toFixed(1)+'%' : '0%';
+      tb.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td>${medal}${rank}</td>
+          <td>${p.name}</td>
+          <td>${p.played}</td>
+          <td>${p.wins}</td>
+          <td>${p.losses}</td>
+          <td>${winPct}</td>
+          <td>${p.points}</td>
+        </tr>
+      `);
+    });
+  }
+
+  function drawTeams(){
+    const acts = players.filter(p=>p.active);
+    const tb = document.querySelector('#teams tbody');
+    tb.innerHTML = '';
+    if(acts.length<2) return;
+    acts.sort((a,b)=> b.points - a.points);
+    const high = [...acts];
+    const low  = high.splice(Math.ceil(acts.length/2));
+    while(high.length && low.length){
+      const p1 = high.shift(), p2 = low.pop();
+      tb.insertAdjacentHTML('beforeend', `<tr>
+        <td class="team1">${p1.name}</td>
+        <td class="team2">${p2.name}</td>
+      </tr>`);
+    }
+  }
+</script>
+</body>
+</html>
